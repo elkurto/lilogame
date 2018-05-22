@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <meta http-equiv="Cache-Control" content="must-revalidate">
+  <meta http-equiv="Cache-Control" content="post-check=0">
+  <meta http-equiv="Cache-Control" content="pre-check=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="expires" content="-1">
+  
+  <link type="text/css" rel="stylesheet" href="../css/vendor/bootstrap4/bootstrap.css"/>
+  <link type="text/css" rel="stylesheet" href="../css/common-koi.css"/>
+  <link type="text/css" rel="stylesheet" href="lilogame.css"/>
+  <title>LiLo Spinner</title>
+</head>
+<body style="overflow: auto">
+
+  <nav class="navbar navbar-primary bg-primary text-white">
+    <span class="navbar-brand">
+      <button type="button" class="btn btn-outline-light btn-sm" title="menu"><img src="../images/icon-menu.svg" alt="menu" width="40" height="40" class="d-inline-block align-top"/></button>
+      <span>
+         <img src="../images/lilo-logo.jpg" style="height:40px; width:40px;"/>
+         <span>LiLo Game</span>
+      </span>
+    </span>
+    
+    <span style="line-height: 40px; vertical-align: top">
+      <button class="btn btn-outline-light btn-sm"><span>Logoff</span></button>
+    </span>
+  </nav>
+  
+  <div id="content" style="max-width: 900px">
+    
+    <div id="holder_spinner" class="holder_spinner">
+      
+      <div class="game-display">
+        <h1>Welcome To Game Room: {{roomname}}</h1>
+        
+        <div class="holder-bettingtiles">
+          <div v-for="tile in tiles" class="bettingtile" v-bind:class="{ winner : tile.b_winner}">
+            <div>
+              
+                <div>Payout: $&nbsp;{{tile.payout}}</div>
+                <div>Odds: {{tile.p_numerator}}:{{tile.p_denominator}}</div>
+                <div><img v-bind:src="tile.icon" height="100" width="100"/></div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="holder-spinners">
+          <div v-for="tile in tiles" class="spinnertile">
+            <div>
+              <div>Pop.: {{tile.n_population}}</div>
+              <div v-if="tile.state === 'initial'">Initial</div>
+              <div v-else-if="tile.state === 'spinning'">Spinning!.oO0</div>
+              <div v-else-if="tile.state === 'winner'">
+                 <div>Winner</div>
+                 <div>Payout Per Player: {{tile.payout_per_player}}</div>
+              </div>
+              <div v-else="tile.state === 'loser'">Loser</div>
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div class="holder-control">
+          
+            <div class="holder-spin-btn">
+              <div>
+                <button type="button" class="btn btn-primary" v-on:click="rest_spinner_spin">Spin !</button>
+              </div>
+            </div>
+        </div>
+        
+         
+      </div>
+    
+    </div>
+  
+  
+
+      
+    <div style="height: 60px">  .   </div>  
+  </div><comment>end-div#content</comment>
+  
+  
+  
+  <script type="text/javascript" src="../js/vendor/jquery/jquery-3.3.1.js"></script>
+  <script type="text/javascript" src="../css/vendor/bootstrap4/bootstrap.js"></script>
+  <script type="text/javascript" src="../js/vendor/vue/vue.js"></script>
+  <script type="text/javascript" src="../js/pw_xhr.js"></script>
+  
+  <script type="text/javascript" src="lilogame.js"></script>
+  
+<script type="text/javascript">
+"use strict";
+var vue_spinner =new Vue({
+  el : '#holder_spinner'
+  ,data : {
+    gameroom : 'TRIAL TEST'
+    ,        tiles : [{id: 0, payout: 40, p_numerator: 1, p_denominator: 4  , icon:'../images/icon-slice-lemon.svg',  b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+                     ,{id: 1, payout:  1, p_numerator: 1, p_denominator: 1  , icon:'../images/icon-slice-lime.svg',   b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+                     ,{id: 2, payout: 80, p_numerator: 1, p_denominator: 8  , icon:'../images/icon-slice-orange.svg', b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+                    ]
+                    
+  }
+  ,methods : {
+    rest_spinner_spin : function(event) {
+      pw.xhr.REQUEST.ajax({
+        url : '../../rest/spinner/spin/'
+        ,method : 'POST'
+        ,success : function( s_resp, oxhr, options ) {
+          console.log('in rest_spinner_spin::success');
+          // 1. check for errmsg
+          
+          // 2. update state
+          
+         }.bind(this)
+        ,error : function( s_resp, oxhr, options ) {
+          console.log('in rest_spinner_spin::error');
+          // report error
+        }.bind(this)
+      });
+    }
+    
+    
+  
+    ,spin_all : function(event) {
+      console.log('you clicked spin');
+      for (var i =0; i < this.tiles.length; i++ ) {
+        var tile =this.tiles[i];
+        tile.state ='spinning';
+        
+        
+        var i_rand =Math.round( Math.random() *1000 );
+        if (i_rand <= Math.ceil( tile.p_numerator * 1000.0 / tile.p_denominator )  ) {
+          // then winner
+          tile.state ='winner';
+          tile.payout_per_player =this.compute_payout_per_player(tile);      
+        }else {
+          // then loser
+          tile.state ='loser';
+        }
+        
+      }
+      
+      
+    }
+  
+    ,compute_payout_per_player : function( tile ) {
+      if (tile.id === 1) {
+        return '1.0000';
+      }
+      
+      var payout_x_10000 =tile.payout * 10000.0;  
+      
+      var dollars =Math.floor( payout_x_10000 / tile.n_population / 10000 ); 
+      var cents =Math.ceil( payout_x_10000 / tile.n_population % 10000 );
+      cents =this.pad_left( cents, 4, '0' );
+      
+      var payout_per_player =dollars +'.'+ cents;
+      
+      return payout_per_player;
+    }
+    
+    ,pad_left : function( str, len, c_pad_with ) {
+      c_pad_with =( this.is_defined( c_pad_with ) ? c_pad_with +'' : ' ' );
+      c_pad_with =( c_pad_with.length < 1 ? ' ' : c_pad_with.charAt(0));
+      len =this.intval( len, 0 );
+      
+      var str_padded_rval =str+'';
+      for ( var i =str_padded_rval.length; i < len; i++ ) {
+        str_padded_rval =c_pad_with + str_padded_rval;
+      }
+      
+      return str_padded_rval;
+    }
+    ,is_defined :function( x ) {
+      return !( x === undefined || x === null);
+    }
+    ,intval : function( s, def ) {
+      
+      var rval =def;
+      try {
+        rval =parseInt(s);
+      }catch(ex) {
+        rval =def;  
+      } 
+      if (rval === 0) {
+        ;
+      }else if ( ! rval ) {
+        rval =def;
+      }
+      
+      return rval;
+    }
+  }
+});
+
+/*
+function fn_validate_querystr( querystr ) {
+  console.log('querystr ='+querystr);
+  var query =pw.util.UTIL.parse_querystr();
+  
+  var u =query.u;
+  var s =query.s;
+  if (! u || u.length === 0 || ! s || s.length === 0 ) {
+    window.location ='login.html?e=no_sessionid_or_no_userid';
+  }
+};
+
+function fn_on_ready_document() {
+  fn_validate_querystr( document.location.search );
+};
+window.addEventListener('load', fn_on_ready_document );
+*/
+</script>  
+</body>
+</html>

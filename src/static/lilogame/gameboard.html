@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <meta http-equiv="Cache-Control" content="must-revalidate">
+  <meta http-equiv="Cache-Control" content="post-check=0">
+  <meta http-equiv="Cache-Control" content="pre-check=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="expires" content="-1">
+  
+  <link type="text/css" rel="stylesheet" href="../css/vendor/bootstrap4/bootstrap.css"/>
+  <link type="text/css" rel="stylesheet" href="../css/common-koi.css"/>
+  <link type="text/css" rel="stylesheet" href="../css/animate-css/animate.css"/>
+  
+  <link type="text/css" rel="stylesheet" href="lilogame.css"/>
+  
+  <title>LiLo Game</title>
+</head>
+<body style="overflow: auto">
+
+  <nav class="navbar navbar-primary bg-primary text-white">
+    <span class="navbar-brand">
+      <button type="button" class="btn btn-outline-light btn-sm" title="menu"><img src="../images/icon-menu.svg" alt="menu" width="40" height="40" class="d-inline-block align-top"/></button>
+      <span>
+         <img src="../images/lilo-logo.jpg" style="height:40px; width:40px;"/>
+         <span>LiLo Game</span>
+      </span>
+    </span>
+    
+    <span style="line-height: 40px; vertical-align: top">
+      <button class="btn btn-outline-light btn-sm"><span>Logoff</span></button>
+    </span>
+  </nav>
+  
+  <div id="content" style="max-width: 900px">
+  
+    <div id="holder_gamecard">
+    Loading...
+
+            
+    </div>
+      
+    <div style="height: 60px">  .   </div>  
+  </div>
+  <script type="text/template" id="template_holder_gamecard">
+      <div data-role="vue-template-root">
+        <div>Cash = $&nbsp;{{player.cash}}       Round = {{gameroom.round}}</div>
+        <div class="holder-bettingtiles">
+          <div v-for="tile in tiles"
+               class="bettingtile" v-bind:class="{'selected animated tada' : tile.b_clicked}" 
+               v-on:click="choose_tile($event,tile)">
+            <div>
+                <div>Payout: $&nbsp;{{tile.payout}} {{tile.id !== 1 ? 'shared' : '*each*'}}</div>
+                <div>Odds: {{tile.p_numerator}}:{{tile.p_denominator}}</div>
+                <div><img v-bind:src="tile.icon" height="100" width="100"/></div>
+                <div class="holder-star" v-if="player.tileid === tile.id">
+                  <img src="../images/icon-star.svg" height="20" width="20" alt="*"/>
+                </div>
+
+            </div>
+          </div>
+        </div>
+                
+    
+        <div class="holder-spinners">
+          <div v-for="tile in tiles" class="spinnertile">
+            <div>
+              <div>Pop.: {{tile.n_population}}</div>
+              <div v-if="tile.state === 'initial'">Initial</div>
+              <div v-else-if="tile.state === 'spinning'">Spinning!.oO0</div>
+              <div v-else-if="tile.state === 'winner'">
+                 <div>Winner</div>
+                 <div>Payout Per Player: {{tile.payout_per_player}}</div>
+              </div>
+              <div v-else="tile.state === 'loser'">Loser</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:100%; text-align:center">
+          
+            <button type="button" class="btn btn-secondary" v-on:click="refresh">Refresh</button>
+        </div>  
+      </div>
+  </script>
+
+  
+  <script type="text/javascript" src="../js/vendor/jquery/jquery-3.3.1.js"></script>
+  <script type="text/javascript" src="../css/vendor/bootstrap4/bootstrap.js"></script>
+  <script type="text/javascript" src="../js/vendor/vue/vue.js"></script>
+  <script type="text/javascript" src="../js/pw_xhr.js"></script>
+  
+  <script type="text/javascript" src="lilogame.js"></script>
+  
+<script type="text/javascript">
+/* var vue_gameboard =new Vue({
+  el : '#holder_gamecard'
+  ,data : {
+    selected_tileid : null
+    ,tiles : [{id: 0, payout: 40, p_numerator: 1, p_denominator: 2  , icon:'../images/icon-slice-lemon.svg',  b_clicked:false, b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+    ,{id: 1, payout:  1, p_numerator: 1, p_denominator: 1  , icon:'../images/icon-slice-lime.svg',   b_clicked:false, b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+    ,{id: 2, payout: 80, p_numerator: 1, p_denominator: 4  , icon:'../images/icon-slice-orange.svg', b_clicked:false, b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+   ]    
+  }
+  ,methods : {
+    choose_tile : function(event,tile) {
+      for (var i =0; i < this.tiles.length; i++ ){
+        var t =this.tiles[i];
+        t.b_clicked =( t.id == tile.id);
+      }
+      
+      console.log('event =' + event + ' tile.id ='+tile.id);
+      console.log('event.currentTarget ='+ event.currentTarget);
+      var odom_tile =event.currentTarget;
+      odom_tile.classList.add('animated');
+      odom_tile.classList.add('tada');
+      
+      setTimeout( function() {
+          odom_tile.classList.remove('animated'); 
+          odom_tile.classList.remove('tada');
+        }, 1000);
+      
+      
+    } 
+  }
+}); */
+
+function fn_get_data_vue_gameroom_player( ) {
+  var query =pw.util.UTIL.parse_querystr();
+  var u =encodeURIComponent(  query.u )
+  var s =encodeURIComponent( query.s );
+  var s_url ='../../rest/gameroom/player/'
+            +'?u=' + u 
+            +'&s=' + s
+            ;
+  pw.xhr.REQUEST.ajax({
+     url : s_url
+    ,method : 'GET'
+    ,success : function( s_resp, xhr, options ) {
+      var oresp =null;
+      try {
+        oresp =JSON.parse( s_resp );
+        if (oresp.errmsg) {
+          throw new Error( oresp.errmsg )
+        }
+        fn_init_vue_gameroom_player( oresp );
+      } catch(ex) {
+        console.error(ex);
+        var s_errmsg ='';
+        s_errmsg +=ex.message;
+        alert(s_errmsg);
+      }   
+    } 
+    ,error : function( s_resp, xhr, options ) {
+      alert('there was an error :: s_resp =' + s_resp);   
+    }
+  });
+};
+
+var vg =null;
+function fn_init_vue_gameroom_player( oresp ) {
+  var vue_gameboard =vg =new Vue({
+    el : '#holder_gamecard'
+    ,template : document.querySelector('#template_holder_gamecard').innerHTML
+    ,data : function() {
+      return oresp;    
+    }
+    ,methods : {
+      choose_tile : function(event,tile) {
+        for (var i =0; i < this.tiles.length; i++ ){
+          var t =this.tiles[i];
+          t.b_clicked =( t.id == tile.id);
+        }
+        
+        console.log('event =' + event + ' tile.id ='+tile.id);
+        
+        if (event) {
+          console.log('event.currentTarget ='+ event.currentTarget);
+          var odom_tile =event.currentTarget;
+          odom_tile.classList.add('animated');
+          odom_tile.classList.add('tada');
+          
+          setTimeout( function() {
+              odom_tile.classList.remove('animated'); 
+              odom_tile.classList.remove('tada');
+            }, 1000);
+        }
+        // send a request to associate player/tile
+        var tileid =tile.id;
+        var playerid =this.player.id;
+        var query =pw.util.UTIL.parse_querystr();
+        //@TOOD: errmsg if not u ior not s
+        var u =query.u ;
+        var s =query.s ;
+        var s_url ='/rest/currenttile/playerid/'+ playerid +'/tileid/'+ tileid +'/'
+                  +'?u='+ encodeURIComponent(u) 
+                  +'&s='+ encodeURIComponent(s)
+                  ;
+        pw.xhr.REQUEST.ajax({
+          url : s_url
+          ,method : 'GET'
+          ,success : function(s_resp, oxhr, options ) {
+            var oresp =null;
+            try {
+              oresp =JSON.parse(s_resp);
+              this.update_gameroom_tiles_player( oresp );
+              
+              //this.$set( this.gameroom,'round', oresp.gameroom.round );
+              //for (var i =0; i < oresp.tiles.length; i++ ) {
+              //  this.$set( this.tiles, i, oresp.tiles[i] );
+              //  // @todo animate each tile
+              //}
+              //this.$set( this.player, 'dollars', oresp.player.dollars);
+              //this.$set( this.player, 'tenthouths', oresp.player.tenthouths);
+              //this.$set( this.player, 'cash', oresp.player.cash);
+              //this.$set( this.player, 'tileid', oresp.player.tileid);
+              //this.$set( this.player, 'dollars', oresp.player.dollars);
+              
+            }catch(ex) {
+              console.error(ex);
+              var s_errmsg ='';
+              s_errmsg +=ex.message;
+              alert(s_errmsg);
+            } 
+          }.bind(this) // end-success
+          ,error : function(s_resp, oxhr, options ) {
+            console.log('in rest_spinner_spin::error');
+          }.bind(this) // end-error
+        });// end-ajax
+        
+      } // end-choose_tile
+      ,update_gameroom_tiles_player : function( oresp ) {
+        
+        this.$set( this.gameroom,'round', oresp.gameroom.round );
+        for (var i =0; i < oresp.tiles.length; i++ ) {
+          this.$set( this.tiles, i, oresp.tiles[i] );
+          // @todo animate each tile
+        }
+        this.$set( this.player, 'dollars', oresp.player.dollars);
+        this.$set( this.player, 'tenthouths', oresp.player.tenthouths);
+        this.$set( this.player, 'cash', oresp.player.cash);
+        this.$set( this.player, 'tileid', oresp.player.tileid);
+        this.$set( this.player, 'dollars', oresp.player.dollars);        
+        
+      }
+      ,refresh : function() {
+        var query =pw.util.UTIL.parse_querystr();
+        var u =encodeURIComponent(  query.u )
+        var s =encodeURIComponent( query.s );
+        var s_url ='../../rest/gameroom/player/'
+                  +'?u=' + u 
+                  +'&s=' + s
+                  ;
+        pw.xhr.REQUEST.ajax({
+           url : s_url
+          ,method : 'GET'
+          ,success : function( s_resp, xhr, options ) {
+            var oresp =null;
+            try {
+              oresp =JSON.parse( s_resp );
+              if (oresp.errmsg) {
+                throw new Error( oresp.errmsg )
+              }
+              this.update_gameroom_tiles_player(oresp);
+            } catch(ex) {
+              console.error(ex);
+              var s_errmsg ='';
+              s_errmsg +=ex.message;
+              alert(s_errmsg);
+            }   
+          }.bind(this)
+          ,error : function( s_resp, xhr, options ) {
+            alert('there was an error :: s_resp =' + s_resp);   
+          }.bind(this)
+        });        
+      }
+    }//end-methods
+  });//end-vue   
+};
+
+function fn_validate_querystr( querystr ) {
+  console.log('querystr ='+querystr);
+  var query =pw.util.UTIL.parse_querystr();
+  
+  var u =query.u;
+  var s =query.s;
+  if (! u || u.length === 0 || ! s || s.length === 0 ) {
+    window.location ='login.html?e=no_sessionid_or_no_userid';
+  }
+};
+
+function fn_on_ready_document() {
+  fn_validate_querystr( document.location.search );
+  
+
+  fn_get_data_vue_gameroom_player();
+};
+window.addEventListener('load', fn_on_ready_document );
+
+
+var i_robot_iteration =0;
+var i_robot_iteration_max =100;
+var i_robot_interval =100;
+var fn_run_robot00 =function() {
+  if (i_robot_iteration < i_robot_iteration_max) {
+    i_robot_iteration += 1
+    i_tile_index =i_robot_iteration % vg.tiles.length;
+    vg.choose_tile(null, vg.tiles[i_tile_index]); 
+    setTimeout(fn_run_robot00, i_robot_interval);
+  }
+};
+var fn_reset_robot00 =function() {
+  i_robot_iteration =0;
+  i_robot_iteration_max =100;
+  i_robot_interval =100;  
+}
+</script>
+</body>
+</html>

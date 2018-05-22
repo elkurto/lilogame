@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <meta http-equiv="Cache-Control" content="must-revalidate">
+  <meta http-equiv="Cache-Control" content="post-check=0">
+  <meta http-equiv="Cache-Control" content="pre-check=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="expires" content="-1">
+  
+  <link type="text/css" rel="stylesheet" href="../css/vendor/bootstrap4/bootstrap.css"/>
+  
+  <link type="text/css" rel="stylesheet" href="lilogame.css"/>
+  <title>LiLo Spinner</title>
+</head>
+<body style="overflow: auto">
+
+  <nav class="navbar navbar-primary bg-primary text-white">
+    <span class="navbar-brand">
+      <button type="button" class="btn btn-outline-light btn-sm" title="menu"><img src="../images/icon-menu.svg" alt="menu" width="40" height="40" class="d-inline-block align-top"/></button>
+      <span>
+         <img src="../images/lilo-logo.jpg" style="height:40px; width:40px;"/>
+         <span>LiLo Game</span>
+      </span>
+    </span>
+    
+    <span style="line-height: 40px; vertical-align: top">
+      <button class="btn btn-outline-light btn-sm"><span>Logoff</span></button>
+    </span>
+  </nav>
+  
+  <div id="content" style="max-width: 900px">
+    
+    <div id="holder_spinner" class="holder_spinner">
+      Loading ... 
+      
+      
+    
+    </div>
+  
+  
+
+      
+    <div style="height: 60px">  &nbsp;   </div>  
+  </div>
+  
+  <script type="text/template" id="template_holder_spinner">
+      <div class="game-display" data-role="template-root-element">
+        <h1>Round: {{gameroom.round}}</h1>
+        
+        <div class="holder-bettingtiles">
+          <div v-for="tile in tiles" class="bettingtile" v-bind:class="{ winner : tile.b_winner}">
+            <div>
+              
+                <div>Payout: $&nbsp;{{tile.payout}} {{tile.id !== 1 ? 'shared' : '*each*'}}</div>
+                <div>Odds: {{tile.p_numerator}}:{{tile.p_denominator}}</div>
+                <div><img v-bind:src="tile.icon" height="100" width="100"/></div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="holder-spinners">
+          <div v-for="tile in tiles" class="spinnertile">
+            <div>
+              <div>Pop.: {{tile.n_population}}</div>
+              <div v-if="tile.state === 'initial'">Initial</div>
+              <div v-else-if="tile.state === 'spinning'">Spinning!.oO0</div>
+              <div v-else-if="tile.state === 'winner'">
+                 <div>Winner</div>
+                 <div>Payout Per Player: {{tile.payout_per_player}}</div>
+              </div>
+              <div v-else="tile.state === 'loser'">Loser</div>
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div class="holder-control">
+          
+            <div class="holder-spin-btn">
+              <div>
+                <button type="button" class="btn btn-primary" v-on:click="rest_spinner_spin">Spin !</button>
+              </div>
+            </div>
+        </div>
+        
+        <div style="width:100%; text-align:center">
+          
+            <button type="button" class="btn btn-secondary" v-on:click="refresh" >Refresh</button>
+            <button type="button" class="btn btn-secondary" v-on:click="reset_all_players_cash">Reset Players Cash</button>
+            <button type="button" class="btn btn-secondary" v-on:click="reset_round">Reset Round</button>
+            
+        </div>
+
+        <div style="width:100%; text-align:right">
+          <ul>
+            <li><a href="../rest/dumpstate/">Dump State</a></li>
+            <li><a href="leader_board.html">Show Leader Board</a></li>
+            <li><a href="tilemgr.html">Modify Tiles</a></li>
+          </ul>
+        </div>  
+      </div>
+
+
+  </script>
+  
+  <script type="text/javascript" src="../js/vendor/jquery/jquery-3.3.1.js"></script>
+  <script type="text/javascript" src="../css/vendor/bootstrap4/bootstrap.js"></script>
+  <script type="text/javascript" src="../js/vendor/vue/vue.js"></script>
+  <script type="text/javascript" src="../js/pw_xhr.js"></script>
+  
+  <script type="text/javascript" src="lilogame.js"></script>
+  
+<script type="text/javascript">
+"use strict";
+
+
+
+
+
+function fn_validate_cookie( s_cookie ) {
+  
+  var b_has_sessionid =false;
+
+  if (! s_cookie ) {
+    b_has_sessionid =false;
+  }else {
+    // perform some client side validation on 
+    
+    var ary_s_pair =s_cookie.split(';')
+    for (var i =0; i < ary_s_pair.length; i++) {
+      var s_pair =  ary_s_pair[i];
+      if ( ! s_pair ) {
+        continue;
+      }
+      var ary_key_val =s_pair.split('=',2);
+      var key =(ary_key_val && ary_key_val.length >= 0  ? ary_key_val[0] : null);
+      var val =(ary_key_val && ary_key_val.length >= 1  ? ary_key_val[1] : null);
+      if ( key == 'ss' && val ) {
+        b_has_sessionid =true;
+        break;
+      }
+      
+    }//end-for-i  
+  }
+  if (b_has_sessionid === false ) {
+    window.location ='login-spinner.html?e=no_sessionid';
+  }
+  
+};
+
+function fn_get_data_vue_spinner( ) {
+  pw.xhr.REQUEST.ajax({
+     url : '../../rest/gameroom/'
+    ,method : 'GET'
+    ,success : function( s_resp, xhr, options ) {
+      var oresp =null;
+      try {
+        oresp =JSON.parse( s_resp );
+        if (oresp.errmsg) {
+          throw new Error( oresp.errmsg )
+        }
+        fn_init_vue_spinner( oresp );
+      } catch(ex) {
+        console.error(ex);
+        var s_errmsg ='';
+        s_errmsg +=ex.message;
+        alert(s_errmsg);
+      }   
+    } 
+    ,error : function( s_resp, xhr, options ) {
+      alert('there was an error :: s_resp =' + s_resp);   
+    }
+  });
+};
+
+//      gameroom : 'TRIAL TEST'
+//      ,        tiles : [{id: 0, payout: 40, p_numerator: 1, p_denominator: 4  , icon:'../images/icon-slice-lemon.svg',  b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+//                       ,{id: 1, payout:  1, p_numerator: 1, p_denominator: 1  , icon:'../images/icon-slice-lime.svg',   b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+//                       ,{id: 2, payout: 80, p_numerator: 1, p_denominator: 8  , icon:'../images/icon-slice-orange.svg', b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+//                      ]
+//    }
+
+var vs =null;
+function fn_init_vue_spinner( ojson ) {
+  var vue_spinner =vs =new Vue({
+    el : '#holder_spinner'
+    ,template : document.querySelector('#template_holder_spinner').innerHTML
+    ,data : function() {
+      return ojson; 
+    }
+
+    ,methods : {
+      rest_spinner_spin : function(event) {
+        pw.xhr.REQUEST.ajax({
+          url : '../../rest/spinner/spin/'
+          ,method : 'POST'
+          ,success : function( s_resp, oxhr, options ) {
+            console.log('in rest_spinner_spin::success');
+            // 1. check for errmsg
+            // 2. update state
+            var oresp =null;
+            try {
+              oresp =JSON.parse(s_resp);
+              this.update_gameroom_tiles( oresp );
+              //this.gameroom.round =oresp.gameroom.round;
+              //for (var i =0; i < oresp.tiles.length; i++ ) {
+              //  this.$set( this.tiles, i, oresp.tiles[i] );
+              //  // @todo animate each tile
+              //}
+            }catch(ex) {
+              console.error(ex);
+              var s_errmsg ='';
+              s_errmsg +=ex.message;
+              alert(s_errmsg);
+            }
+
+            
+           }.bind(this)
+          ,error : function( s_resp, oxhr, options ) {
+            console.log('in rest_spinner_spin::error');
+            // report error
+          }.bind(this)
+        });
+      }
+      ,update_gameroom_tiles : function( oresp ) {
+        console.log('updating ' + oresp );
+        this.gameroom.round =oresp.gameroom.round;
+        for (var i =0; i < oresp.tiles.length; i++ ) {
+          this.$set( this.tiles, i, oresp.tiles[i] );
+          // @todo animate each tile
+        }//end-for-i
+      }
+      ,refresh : function() {
+        
+          pw.xhr.REQUEST.ajax({
+            url : '../../rest/gameroom/'
+           ,method : 'GET'
+           ,success : function( s_resp, xhr, options ) {
+             var oresp =null;
+             try {
+               oresp =JSON.parse( s_resp );
+               if (oresp.errmsg) {
+                 throw new Error( oresp.errmsg )
+               }
+               this.update_gameroom_tiles(oresp);
+             } catch(ex) {
+               console.error(ex);
+               var s_errmsg ='';
+               s_errmsg +=ex.message;
+               alert(s_errmsg);
+             }   
+           }.bind(this)
+           ,error : function( s_resp, xhr, options ) {
+             alert('there was an error :: s_resp =' + s_resp);   
+           }.bind(this)
+         });
+        
+      }
+      ,reset_all_players_cash : function() {
+        var b_really =confirm('Click OK to zero all players` cash.\n'
+                             +'Click Cancel to change nothing\n');
+        if (b_really) {
+          pw.xhr.REQUEST.ajax({
+            url : '../../rest/reset_all_player_cash/'
+           ,method : 'GET'
+           ,success : function( s_resp, xhr, options ) {
+             var oresp =null;
+             try {
+               oresp =JSON.parse( s_resp );
+               if (oresp.errmsg) {
+                 throw new Error( oresp.errmsg )
+               }else {
+                 alert('ledger zeroed');  
+               }
+               
+             } catch(ex) {
+               console.error(ex);
+               var s_errmsg ='';
+               s_errmsg +=ex.message;
+               alert(s_errmsg);
+             }   
+           }.bind(this)
+           ,error : function( s_resp, xhr, options ) {
+             alert('there was an error :: s_resp =' + s_resp);   
+           }.bind(this)
+         });          
+        }//endif
+      }//end-reset_all_players_cash
+      ,reset_round : function() {
+            var b_really =confirm('Click OK to set round =0.\n'
+                              +'Click Cancel to change nothing\n'
+                              );
+
+            if (b_really) {
+              pw.xhr.REQUEST.ajax({
+                url : '../../rest/reset_round_counter/',
+                method : 'GET',
+                success : function(s_resp, xhr, options) {
+                  var oresp = null;
+                  try {
+                    oresp = JSON.parse(s_resp);
+                    if (oresp.errmsg) {
+                      throw new Error(oresp.errmsg)
+                    } else {
+                      alert('round counter zeroed');
+                    }
+                    this.$set( this.gameroom, 'round', 0);
+                  } catch (ex) {
+                    console.error(ex);
+                    var s_errmsg = '';
+                    s_errmsg += ex.message;
+                    alert(s_errmsg);
+                  }
+                }.bind(this),
+                error : function(s_resp, xhr, options) {
+                  alert('there was an error :: s_resp =' + s_resp);
+                }.bind(this)
+              });
+            }//endif
+        }
+      }
+    });
+  };
+
+  function fn_on_ready_document() {
+    // 1. 
+    fn_validate_cookie(document.cookie);
+
+    // 2. 
+    fn_get_data_vue_spinner();
+  };
+  window.addEventListener('load', fn_on_ready_document);
+
+  var i_robot_iteration = 0;
+  var i_robot_iteration_max = 100;
+  var i_robot_interval = 100;
+  var fn_run_robot00 = function() {
+    if (i_robot_iteration < i_robot_iteration_max) {
+      i_robot_iteration += 1
+      vs.rest_spinner_spin(null);
+      setTimeout(fn_run_robot00, i_robot_interval);
+    }
+  };
+  var fn_reset_robot00 = function() {
+    i_robot_iteration = 0;
+    i_robot_iteration_max = 100;
+    i_robot_interval = 100;
+  }
+</script>  
+</body>
+</html>

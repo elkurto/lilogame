@@ -1,0 +1,84 @@
+@CHARSET "UTF-8";
+
+.holder-bettingtiles 
+, .holder-spinners     {
+  display:flex;
+  align-items: center;
+  justify-content: center;    
+} 
+
+.bettingtile  
+, .spinnertile {
+  flex: 1;
+  
+  min-height: 230px;
+  width: 200px;
+  
+  font-size: 22px;
+  font-weight: bold;
+  background-color: white;
+  text-align: center;
+  border-radius: 10px;
+  border: 3px solid #99aafc;
+  margin: 10px;
+  padding: 7px;
+}
+
+.bettingtile.selected {
+  background-color: #33aafc;
+}
+
+.bettingtile > div {
+  background-color: #33669c;
+  border-radius: 5px;
+  padding-bottom: 5px;
+  color: white;
+}
+
+.bettingtile > div:hover {
+  background-color: #33aafc;
+}
+
+.holder-spin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;  
+
+}
+
+.holder-spin-btn > div {
+  flex: 1;
+  
+  font-size: 22px;
+  font-weight: bold;
+  background-color: white;
+  text-align: center;
+  border-radius: 10px;
+  border: 3px solid #99aafc;
+  margin: 10px;
+  padding: 7px;
+  
+  height: 100px;
+  max-width: 500px;
+}
+
+.holder-spin-btn > div > button {
+   background-color: #33669c;
+   border-radius: 5px;
+   height: 100%;
+   width: 100%;
+   
+   font-size: 36px;
+}
+
+.holder-spinners {
+  
+}
+
+.holder-star {
+  display: inline-block;
+  position: relative;
+  top: 0px;
+  left: 0px;
+  z-index: 1;
+}

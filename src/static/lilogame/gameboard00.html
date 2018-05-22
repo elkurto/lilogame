@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <meta http-equiv="Cache-Control" content="must-revalidate">
+  <meta http-equiv="Cache-Control" content="post-check=0">
+  <meta http-equiv="Cache-Control" content="pre-check=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="expires" content="-1">
+  
+  <link type="text/css" rel="stylesheet" href="../css/vendor/bootstrap4/bootstrap.css"/>
+  <link type="text/css" rel="stylesheet" href="../css/common-koi.css"/>
+  <link type="text/css" rel="stylesheet" href="../css/animate-css/animate.css"/>
+  
+  <link type="text/css" rel="stylesheet" href="lilogame.css"/>
+  
+  <title>LiLo Game</title>
+</head>
+<body style="overflow: auto">
+
+  <nav class="navbar navbar-primary bg-primary text-white">
+    <span class="navbar-brand">
+      <button type="button" class="btn btn-outline-light btn-sm" title="menu"><img src="../images/icon-menu.svg" alt="menu" width="40" height="40" class="d-inline-block align-top"/></button>
+      <span>
+         <img src="../images/lilo-logo.jpg" style="height:40px; width:40px;"/>
+         <span>LiLo Game</span>
+      </span>
+    </span>
+    
+    <span style="line-height: 40px; vertical-align: top">
+      <button class="btn btn-outline-light btn-sm"><span>Logoff</span></button>
+    </span>
+  </nav>
+  
+  <div id="content" style="max-width: 900px">
+  
+    <div id="holder_gamecard">
+    
+        <div class="holder-bettingtiles">
+          <div v-for="tile in tiles"
+               class="bettingtile" v-bind:class="{'selected animated tada' : tile.b_clicked}" 
+               v-on:click="choose_tile($event,tile)">
+            <div>
+                <div>Payout: $&nbsp;{{tile.payout}} {{tile.id !== 1 ? 'shared' : ''}}</div>
+                <div>Odds: {{tile.p_numerator}}:{{tile.p_denominator}}</div>
+                <div><img v-bind:src="tile.icon" height="100" width="100"/></div>
+              
+            </div>
+          </div>
+        </div>
+                
+    
+        <div class="holder-spinners">
+          <div v-for="tile in tiles" class="spinnertile">
+            <div>
+              <div>Pop.: {{tile.n_population}}</div>
+              <div v-if="tile.state === 'initial'">Initial</div>
+              <div v-else-if="tile.state === 'spinning'">Spinning!.oO0</div>
+              <div v-else-if="tile.state === 'winner'">
+                 <div>Winner</div>
+                 <div>Payout Per Player: {{tile.payout_per_player}}</div>
+              </div>
+              <div v-else="tile.state === 'loser'">Loser</div>
+            </div>
+          </div>
+        </div>
+            
+    </div>
+      
+    <div style="height: 60px">  .   </div>  
+  </div><comment>end-div#content</comment>
+  
+
+  
+  <script type="text/javascript" src="../js/vendor/jquery/jquery-3.3.1.js"></script>
+  <script type="text/javascript" src="../css/vendor/bootstrap4/bootstrap.js"></script>
+  <script type="text/javascript" src="../js/vendor/vue/vue.js"></script>
+  
+<script type="text/javascript">
+var vue_gameboard =new Vue({
+  el : '#holder_gamecard'
+  ,data : {
+    selected_tileid : null
+    ,tiles : [{id: 0, payout: 40, p_numerator: 1, p_denominator: 2  , icon:'../images/icon-slice-lemon.svg',  b_clicked:false, b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+    ,{id: 1, payout:  1, p_numerator: 1, p_denominator: 1  , icon:'../images/icon-slice-lime.svg',   b_clicked:false, b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+    ,{id: 2, payout: 80, p_numerator: 1, p_denominator: 4  , icon:'../images/icon-slice-orange.svg', b_clicked:false, b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+   ]    
+  }
+  ,methods : {
+    choose_tile : function(event,tile) {
+      for (var i =0; i < this.tiles.length; i++ ){
+        var t =this.tiles[i];
+        t.b_clicked =( t.id == tile.id);
+      }
+      
+      console.log('event =' + event + ' tile.id ='+tile.id);
+      console.log('event.currentTarget ='+ event.currentTarget);
+      var odom_tile =event.currentTarget;
+      odom_tile.classList.add('animated');
+      odom_tile.classList.add('tada');
+      
+      setTimeout( function() {
+          odom_tile.classList.remove('animated'); 
+          odom_tile.classList.remove('tada');
+        }, 1000);
+      
+      
+    } 
+  }
+});
+  
+</script>
+</body>
+</html>

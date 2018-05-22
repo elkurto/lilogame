@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <meta http-equiv="Cache-Control" content="must-revalidate">
+  <meta http-equiv="Cache-Control" content="post-check=0">
+  <meta http-equiv="Cache-Control" content="pre-check=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="expires" content="-1">
+  
+  <link type="text/css" rel="stylesheet" href="../css/vendor/bootstrap4/bootstrap.css"/>
+  
+  <link type="text/css" rel="stylesheet" href="lilogame.css"/>
+  
+  <title>Welcome To The LiLo Game</title>
+  
+<style type="text/css">
+  #content {
+    padding: 40px;
+    text-align: center;
+  }
+  .holder-form-login {
+    margin-left: auto;
+    margin-right: auto;
+    width: 400px;
+
+    font-size: 22px;
+    font-weight: bold;
+    background-color: white;
+    
+    border-radius: 10px;
+    border: 3px solid #33aafc;
+    
+    padding: 7px;
+  }
+  .holder-form-login > div {
+    background-color: #33aafc;
+    border-radius: 5px;
+    height: 100%;
+    color: white;
+    padding: 10px;
+  }
+  #errmsg {
+    font-size: 16px;
+    width: 100%;
+    
+  }
+  
+  .input-label {
+    width :110px;
+  }
+  div.instructions {
+    width: 500px;
+    text-align: left;
+    margin-left:auto; 
+    margin-right:auto;
+  }
+</style>
+</head>
+<body style="overflow: auto">
+
+  <div id="content" style="max-width: 900px">
+    <h1>Welcome To The Lilo Game</h1>
+    
+    <div class="holder-form-login">
+      <div>
+      
+        <h3>Please Sign-In</h3>
+        <form method="POST" action="../../rest/playerauthn/">
+        
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text input-label">Username</span>
+            </div>
+            
+            <input type="text" class="form-control" name="username" aria-label="username">
+            <div id="errmsg_username" class="errmsg"></div>
+          </div>
+          
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text input-label">Password</span>
+            </div>
+                     
+            <input type="password" class="form-control" name="password" aria-label="password"> 
+           
+            <br/>
+            <div id="errmsg_password" class="errmsg"></div>
+          </div>    
+          
+          <input type="hidden" name="p" value=""/>
+          <input type="hidden" name="u" value=""/>    
+           
+          <div style="text-align: center">
+            <input type="submit" class="btn btn-primary btn-md" value="Join The Default Game"/>
+          </div>
+        </form>
+      
+      </div>
+      
+      
+    </div>
+    
+    <div>
+    
+    <div class="instructions">Instructions:<br/>
+      <ul>
+        <li>Just specify any non-empty; username and password.
+        </li>
+        <li>Try to keep the your username indicative of who you are (e.g. George W)
+        so that we can identify winners later.
+        </li>
+        <li>If a player account with the specied username does not exists, 
+        then the system will create a player account for you.
+        </li>
+        <li>If a player account with the specied username does exists, 
+        then the system will require you to use the same password. 
+        </li>
+        <li>If you lost your password, then make another account.
+        </li> 
+      </ul> 
+    </div> 
+    
+    </div> 
+  </div>
+  
+  
+  <script type="text/javascript" src="../js/vendor/jquery/jquery-3.3.1.js"></script>
+  <script type="text/javascript" src="../css/vendor/bootstrap4/bootstrap.js"></script>
+  
+  <script type="text/javascript">
+  "use strict;"
+  function validate(event) {
+    this.username.value =this.username.value.trim();
+    this.password.value =this.password.value.trim();
+    
+    
+    
+    if (this.username.value.length == 0) {
+      event.preventDefault();
+      
+      var odom_errmsg =document.querySelector('#errmsg_username');
+      odom_errmsg.innerHTML ='Please enter a non-empty username';
+      odom_errmsg.classList.add('alert');
+      odom_errmsg.classList.add('alert-warning');
+      
+    }else {
+      this.u.value =this.username.value
+    }
+    
+    if (this.password.value.length == 0) {
+      event.preventDefault();
+      
+      var odom_errmsg =document.querySelector('#errmsg_password');
+      odom_errmsg.innerHTML ='Please enter a non-empty password';
+      odom_errmsg.classList.add('alert');
+      odom_errmsg.classList.add('alert-warning');
+      
+    }else {
+      this.p.value =btoa(this.password.value)
+      this.password.value ='';
+      
+      
+    }   
+    
+  }
+  
+  var odom_form =document.querySelector('form');
+  odom_form.addEventListener('submit', validate);
+  
+  
+  
+  </script>
+  
+</body>
+</html>
