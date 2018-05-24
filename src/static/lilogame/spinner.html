@@ -41,7 +41,7 @@
       
     
     </div>
-  
+
   
 
       
@@ -56,9 +56,13 @@
           <div v-for="tile in tiles" class="bettingtile" v-bind:class="{ winner : tile.b_winner}">
             <div>
               
-                <div>Payout: $&nbsp;{{tile.payout}} {{tile.id !== 1 ? 'shared' : '*each*'}}</div>
+                <div>
+                   <span>Payout: $&nbsp;{{tile.payout}}</span> 
+                   <span>{{compute_msg_distrib(tile)}}</span>
+                </div>
                 <div>Odds: {{tile.p_numerator}}:{{tile.p_denominator}}</div>
                 <div><img v-bind:src="tile.icon" height="100" width="100"/></div>
+                
               
             </div>
           </div>
@@ -181,9 +185,9 @@ function fn_get_data_vue_spinner( ) {
 };
 
 //      gameroom : 'TRIAL TEST'
-//      ,        tiles : [{id: 0, payout: 40, p_numerator: 1, p_denominator: 4  , icon:'../images/icon-slice-lemon.svg',  b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
-//                       ,{id: 1, payout:  1, p_numerator: 1, p_denominator: 1  , icon:'../images/icon-slice-lime.svg',   b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
-//                       ,{id: 2, payout: 80, p_numerator: 1, p_denominator: 8  , icon:'../images/icon-slice-orange.svg', b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000'}
+//      ,        tiles : [{id: 0, payout: 40, p_numerator: 1, p_denominator: 4  , icon:'../images/icon-slice-lemon.svg',  b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000', payout_strategyname:'payout_per_player'}
+//                       ,{id: 1, payout:  1, p_numerator: 1, p_denominator: 1  , icon:'../images/icon-slice-lime.svg',   b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000', payout_strategyname:'uniform_each'}
+//                       ,{id: 2, payout: 80, p_numerator: 1, p_denominator: 8  , icon:'../images/icon-slice-orange.svg', b_winner:false , state:'initial', n_population:10, payout_per_player:'0.0000', payout_strategyname:'payout_per_player'}
 //                      ]
 //    }
 
@@ -197,7 +201,18 @@ function fn_init_vue_spinner( ojson ) {
     }
 
     ,methods : {
-      rest_spinner_spin : function(event) {
+      compute_msg_distrib : function(tile) {
+        var msg_distrib ='?'
+        if (tile.payout_strategyname == 'payout_per_player') {
+          msg_distrib ='shared';    
+        }else if (tile.payout_strategyname == 'uniform_each') {
+          msg_distrib ='*each*'; 
+        }
+         
+        return msg_distrib;
+      }
+    
+      ,rest_spinner_spin : function(event) {
         pw.xhr.REQUEST.ajax({
           url : '../../rest/spinner/spin/'
           ,method : 'POST'
@@ -295,8 +310,8 @@ function fn_init_vue_spinner( ojson ) {
       }//end-reset_all_players_cash
       ,reset_round : function() {
             var b_really =confirm('Click OK to set round =0.\n'
-                              +'Click Cancel to change nothing\n'
-                              );
+                                 +'Click Cancel to change nothing\n'
+                                 );
 
             if (b_really) {
               pw.xhr.REQUEST.ajax({

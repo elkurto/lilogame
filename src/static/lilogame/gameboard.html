@@ -13,7 +13,6 @@
   <meta http-equiv="expires" content="-1">
   
   <link type="text/css" rel="stylesheet" href="../css/vendor/bootstrap4/bootstrap.css"/>
-  <link type="text/css" rel="stylesheet" href="../css/common-koi.css"/>
   <link type="text/css" rel="stylesheet" href="../css/animate-css/animate.css"/>
   
   <link type="text/css" rel="stylesheet" href="lilogame.css"/>
@@ -43,12 +42,43 @@
 
             
     </div>
-      
+    
+    <div>
+      <div>Instructions (GamePlay):</div>
+      <ul>
+        <li>Each Player (you) will click (or Tap) a tile to select a tile.</li>
+        
+        <li>Each Player can select at most one tile at a time</li> 
+        
+        <li>By default the center tile is selected.</li>  
+        
+        <li>A star indicates the currently selected tile.</li>
+          
+        <li>Remotely the spinner (not you) will run game rounds (iterations). </li>
+        
+        <li>Each tile lists several pieces of data:
+          <ul>
+            <li>odds of winning (e.g. 1:2)</li>
+            <li>payout awarded upon winning (e.g. $40)</li>
+            <li>payout strategy - either shared or *each*  <br/>
+              &quot;shared&quot; indicates that (upon winning) the payout splits between all players on the shared tile.<br/>
+              &quot;*each*&quot; indicates that (upon winning) the game awards the total payout to each player on the tile.<br/>
+            </li>
+            <li>a picture of citrus fruit (`cause citrus fruit)</li>
+          </ul>  
+            
+        </li>
+        <li>Players can switch tiles at anytime.</li>
+        <li>Switching tiles will cost one dollar ($ 1.0000) per round.  </li>
+        <li>To refresh the player screen click (or tap) the refresh button or a tile.  </li> 
+      </ul>
+    </div>
+          
     <div style="height: 60px">  .   </div>  
   </div>
   <script type="text/template" id="template_holder_gamecard">
       <div data-role="vue-template-root">
-        <div>Cash = $&nbsp;{{player.cash}}       Round = {{gameroom.round}}</div>
+        <div>Cash = $&nbsp;{{player.cash}}  &nbsp;&nbsp;&nbsp;   Round = {{gameroom.round}}  &nbsp;&nbsp;&nbsp;  Player ={{player.u}}</div>
         <div class="holder-bettingtiles">
           <div v-for="tile in tiles"
                class="bettingtile" v-bind:class="{'selected animated tada' : tile.b_clicked}" 
@@ -83,7 +113,7 @@
 
         <div style="width:100%; text-align:center">
           
-            <button type="button" class="btn btn-secondary" v-on:click="refresh">Refresh</button>
+            <button type="button" class="btn btn-secondary" v-on:click="refresh($event)">Refresh</button>
         </div>  
       </div>
   </script>
@@ -248,6 +278,7 @@ function fn_init_vue_gameroom_player( oresp ) {
         
       }
       ,refresh : function() {
+        
         var query =pw.util.UTIL.parse_querystr();
         var u =encodeURIComponent(  query.u )
         var s =encodeURIComponent( query.s );
@@ -276,8 +307,20 @@ function fn_init_vue_gameroom_player( oresp ) {
           ,error : function( s_resp, xhr, options ) {
             alert('there was an error :: s_resp =' + s_resp);   
           }.bind(this)
-        });        
-      }
+        });
+        
+        if (event) {
+          console.log('event.currentTarget ='+ event.currentTarget);
+          var odom =event.currentTarget;
+          odom.classList.add('animated');
+          odom.classList.add('tada');
+          
+          setTimeout( function() {
+              odom.classList.remove('animated'); 
+              odom.classList.remove('tada');
+            }, 1000);
+        }        
+      }//end-fn refresh
     }//end-methods
   });//end-vue   
 };

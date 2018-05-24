@@ -67,6 +67,10 @@ def fn_after_request(resp):
 	
 	#logging.debug('resp.mimetype ={0}'.format(getattr(resp,'mimetype')))
 	if getattr(resp,'mimetype',None) == 'image/svg+xml':
+		# turn off cache of jpeg files
+		pass
+	elif getattr(resp,'mimetype',None) == 'jpeg':
+		# turn off cache of jpeg files
 		pass
 	elif resp is not None and hasattr(resp,'headers') :
 		""" Turn off caching! for non-svg-files"""

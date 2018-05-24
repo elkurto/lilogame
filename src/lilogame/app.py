@@ -126,6 +126,26 @@ def create_flask_app( ):
       resp =lilogame.webworker.rest_reset_round_counter(flask.request)
       return resp
     
+    @app.route('/rest/all_tile_option/',methods=['GET'])
+    def rest_all_tile_option():
+      resp =lilogame.webworker.rest_all_tile_option(flask.request) 
+      return resp
+    
+    @app.route('/rest/tile/tileid/<tileid>/',methods=['GET','PATCH'])
+    def rest_tile_tileid(tileid):
+      if flask.request.method == 'GET':
+        resp =lilogame.webworker.rest_tile_tileid_get(flask.request, tileid)
+      elif flask.request.method == 'PATCH':
+        resp =lilogame.webworker.rest_tile_tileid_patch(flask.request, tileid)
+        
+      return resp
+    
+    @app.route('/rest/all_player/',methods=['GET'])
+    def rest_all_player_get():
+      resp =lilogame.webworker.rest_all_player_get(flask.request) 
+      return resp
+    
+    
   return app  
 #end-def apply_routes_base  
 

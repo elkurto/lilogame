@@ -58,7 +58,7 @@ def lilogame_playerauthn( request ):
     
   else:  
     # A player exists with sessiond, s, but does the username match?
-    if player.username == u:  
+    if player.u == u:  
       #'username and sessionid match'
       url =flask.url_for('static_lilogame_gameboard_html')
       url ='{url}?u={u}&s={s}'.format(url=url, u=u, s=s)
@@ -103,23 +103,32 @@ def rest_spinner_spin( request ):
   # 0. acquire lock
   #
   try:
-    dao =lilogame.registry.get_dao()
-    with dao.spinner_lock:
-      # 1. for each tile in dao.tiles ; compute win/lose and payout and payout_per_player  
-      #  
-      # 2. update players  (conditionally distribute winnings)
-      #
-      _rest_spinner_spin(request)
-        
-      # 3. compose resp
-      #
-      #dao =lilogame.registry.get_dao()
-      gameroom =dao.get_gameroom()
-      tiles =dao.get_tiles()
-      resp_dict =dict(gameroom = gameroom, tiles = tiles )
+    if not _is_valid_spinner_session(request): 
+      errmsg ='exception in rest_spinner_spin :: not valid spinner'
+      logging.error(errmsg) 
+      resp_dict =dict(errmsg=errmsg)
       resp_json =pyppa.json_ez.json.toJson(resp_dict)
-      print('resp_json =',resp_json)
-      resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
+      #print('resp_json =',resp_json)
+      resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))  
+    else:
+    
+      dao =lilogame.registry.get_dao()
+      with dao.spinner_lock:
+        # 1. for each tile in dao.tiles ; compute win/lose and payout and payout_per_player  
+        #  
+        # 2. update players  (conditionally distribute winnings)
+        #
+        _rest_spinner_spin(request)
+          
+        # 3. compose resp
+        #
+        #dao =lilogame.registry.get_dao()
+        gameroom =dao.get_gameroom()
+        tiles =dao.get_tiles()
+        resp_dict =dict(gameroom = gameroom, tiles = tiles )
+        resp_json =pyppa.json_ez.json.toJson(resp_dict)
+        print('resp_json =',resp_json)
+        resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
     
   except:
     errmsg ='exception in rest_spinner_spin'
@@ -145,11 +154,23 @@ def _rest_spinner_spin(request):
     # 1.1. compute payout per player
     tile =tiles[idx]
     if tile.payout_strategyname == lilogame.registry.PayoutStrategyName.uniform_each:
-      tile.state ='winner'
-      tile.payout_this_round ='1.0000'
-      tile.dollars =1
-      tile.tenthouths =0
+      tile.n_population =_fn_count_players_in_tile( players, tile.id)
       
+      fn_random =lilogame.registry.get_fn_random()
+      i_rand_x_1000 = fn_random()  # typically equaivalent to random.randint(0,1000)
+      if i_rand_x_1000 <= (tile.p_numerator * 1000.0 / tile.p_denominator):
+        tile.state ='winner'
+        tile.dollars =tile.payout
+        tile.tenthouths =0
+        tile.payout_per_player =_fn_format_dollars_and_tenthouths(tile.dollars, tile.tenthouths )
+        tile.payout_this_round =_fn_format_dollars_and_tenthouths(tile.dollars * tile.n_population, tile.tenthouths * tile.n_population)
+        
+      else:
+        tile.state ='loser'
+        tile.dollars =0
+        tile.tenthouths =0
+        tile.payout_per_player =_fn_format_dollars_and_tenthouths(tile.dollars, tile.tenthouths )
+        tile.payout_this_round =tile.payout_per_player
       
     elif tile.payout_strategyname == lilogame.registry.PayoutStrategyName.payout_per_player:
       
@@ -454,5 +475,144 @@ def rest_reset_round_counter( request ):
   
   return resp  
   
+def rest_all_tile_option( request ):
+  resp =None
+  try:
+      dao =lilogame.registry.get_dao()
+      gameroom =dao.get_gameroom()
+      tiles =dao.get_tiles()
+      tileoptions =dict( list_payout_strategyname = [lilogame.registry.PayoutStrategyName.uniform_each
+                                                    ,lilogame.registry.PayoutStrategyName.payout_per_player ]
+                        )
+          
+      resp_dict =dict(gameroom=gameroom, tiles=tiles, tileoptions=tileoptions)
+      resp_json =pyppa.json_ez.json.toJson(resp_dict)
+      resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+      
+  except:
+    errmsg ='exception in rest_reset_round_counter'
+    logging.exception(errmsg)
+    resp_dict =dict( errmsg = errmsg)
+    resp_json =pyppa.json_ez.json.toJson(resp_dict)
+    resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
+    
   
+  return resp  
   
+def rest_tile_tileid_get( request , tileid):  
+  resp =None
+  try:
+      i_tileid =int(tileid)
+      dao =lilogame.registry.get_dao()
+      tiles =dao.get_tiles()
+      tile =None
+      for temp_tile in tiles:
+        if temp_tile.id == i_tileid:
+          tile =temp_tile
+          break;
+      
+      if tile is None:
+        tile =dict(id=tileid, errmsg="No such tile with tile.id={0}".format(tileid))
+      resp_json =pyppa.json_ez.json.toJson(tile)
+      resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+      
+  except:
+    errmsg ='exception in rest_tile_tileid_get'
+    logging.exception(errmsg)
+    resp_dict =dict( errmsg = errmsg)
+    resp_json =pyppa.json_ez.json.toJson(resp_dict)
+    resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
+    
+  
+  return resp
+  
+def rest_tile_tileid_patch( request , tileid ):
+  resp =None
+  
+  try:
+    
+    if not _is_valid_spinner_session( request ):
+      resp_dict =dict(errmsg="not authorized to rest_tile_tileid_patch")
+      resp_json =pyppa.json_ez.json.toJson(resp_dict)
+      resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+    else:
+      req_json =request.data
+      xfer_tile =pyppa.json_ez.json.fromJsonToObject(req_json)
+      
+      dao =lilogame.registry.get_dao()
+      tiles =dao.get_tiles()
+      
+      # find the target tile
+      xfer_tile_id =getattr(xfer_tile, 'id', None)
+      xfer_tile_payout =getattr(xfer_tile, 'payout', None)
+      xfer_tile_p_numerator =getattr(xfer_tile, 'p_numerator', None)
+      xfer_tile_p_denominator =getattr(xfer_tile, 'p_denominator', None)
+      xfer_tile_payout_strategyname =getattr(xfer_tile, 'payout_strategyname', None)
+      
+      tile_target =None
+      for temp_tile in tiles:
+        if temp_tile.id == xfer_tile.id:
+          tile_target =temp_tile
+          break;
+        
+      if tile_target is None:
+        tile_target =dict(id=xfer_tile_id
+                         , errmsg="No such tile with xfer_tile.id={0}".format(xfer_tile.id)
+                         )
+      else:
+        with dao.spinner_lock:
+          if xfer_tile_id is not None:
+            tile_target.id =xfer_tile_id
+            
+          if xfer_tile_payout is not None:
+            tile_target.payout =xfer_tile_payout
+          
+          if xfer_tile_p_numerator is not None:
+            tile_target.p_numerator =xfer_tile_p_numerator
+          
+          if xfer_tile_p_denominator is not None:
+            tile_target.p_denominator =xfer_tile_p_denominator
+          
+          if xfer_tile_payout_strategyname is not None:
+            tile_target.payout_strategyname =xfer_tile_payout_strategyname
+            
+      #resp_dict =dict(tile=tile_target)
+      resp_json =pyppa.json_ez.json.toJson(tile_target)
+      resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+      
+  except:
+    errmsg ='exception in rest_tile_tileid_patch'
+    logging.exception(errmsg)
+    resp_dict =dict( errmsg = errmsg)
+    resp_json =pyppa.json_ez.json.toJson(resp_dict)
+    resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
+  
+  return resp
+
+class Object(object):
+  pass
+def rest_all_player_get(request):
+  resp =None
+  try:
+    dao =lilogame.registry.get_dao()
+    gameroom =dao.get_gameroom()
+    players =dao.get_players()
+    players_xfer =len(players)*[None]
+    
+    for idx in xrange(0, len(players)):
+      p =players[idx]
+      pxfer =dict(u=p.u, cash=p.cash, dollars=p.dollars, tenthouths=p.tenthouths, id=p.id)
+      players_xfer[idx] =pxfer
+      
+    resp_dict =dict(gameroom=gameroom, players=players_xfer)
+    resp_json =pyppa.json_ez.json.toJson(resp_dict)
+    resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+  except:
+    errmsg ='exception in rest_tile_tileid_patch'
+    logging.exception(errmsg)
+    resp_dict =dict( errmsg = errmsg)
+    resp_json =pyppa.json_ez.json.toJson(resp_dict)
+    resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
+  
+  return resp  
+      
