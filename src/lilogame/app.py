@@ -146,6 +146,11 @@ def create_flask_app( ):
       return resp
     
     
+    @app.route('/rest/kick_all_player/',methods=['GET'])
+    def rest_kick_all_player_get():
+      resp =lilogame.webworker.rest_kick_all_player_get(flask.request)  
+      return resp
+    
   return app  
 #end-def apply_routes_base  
 

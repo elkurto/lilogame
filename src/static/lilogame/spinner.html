@@ -99,7 +99,7 @@
             <button type="button" class="btn btn-secondary" v-on:click="refresh" >Refresh</button>
             <button type="button" class="btn btn-secondary" v-on:click="reset_all_players_cash">Reset Players Cash</button>
             <button type="button" class="btn btn-secondary" v-on:click="reset_round">Reset Round</button>
-            
+            <button type="button" class="btn btn-secondary" v-on:click="kick_all_player">Total Reset</button>
         </div>
 
         <div style="width:100%; text-align:right">
@@ -340,8 +340,43 @@ function fn_init_vue_spinner( ojson ) {
               });
             }//endif
         }
-      }
-    });
+      , kick_all_player : function() {
+          
+          
+          var b_really =confirm('Click OK to kick all players and reset game.\n'
+              +'Click Cancel to change nothing\n'
+              );
+
+              if (b_really) {
+                pw.xhr.REQUEST.ajax({
+                    url : '../../rest/kick_all_player/',
+                    method : 'GET',
+                    success : function(s_resp, xhr, options) {
+                      var oresp = null;
+                      try {
+                       oresp = JSON.parse(s_resp);
+                       if (oresp.errmsg) {
+                         throw new Error(oresp.errmsg)
+                       } else {
+                         alert('resetted all successfully');
+                         this.refresh();
+                       }
+                       
+                      } catch (ex) {
+                       console.error(ex);
+                       var s_errmsg = '';
+                       s_errmsg += ex.message;
+                       alert(s_errmsg);
+                      }
+                    }.bind(this),
+                    error : function(s_resp, xhr, options) {
+                      alert('there was an error :: s_resp =' + s_resp);
+                    }.bind(this)
+                });//end-ajax
+              }//endif          
+        }//end-total_reset
+      }//end-methods
+    });//end-vue
   };
 
   function fn_on_ready_document() {

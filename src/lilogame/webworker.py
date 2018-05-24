@@ -615,4 +615,34 @@ def rest_all_player_get(request):
     resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
   
   return resp  
+
+def rest_kick_all_player_get(request):
+  resp =None
+  
+  try:
+    if not _is_valid_spinner_session( request ):
+      resp_dict =dict(errmsg="not authorized to rest_tile_tileid_patch")
+      resp_json =pyppa.json_ez.json.toJson(resp_dict)
+      resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+    else:  
+      dao =lilogame.registry.get_dao()
+      with dao.spinner_lock:
+        dao.ary_player =[]
+        
+        for tile in dao.tiles:
+          tile.n_population =0
+          
+        dao.gameroom.round =0
+        
+      resp_dict =dict(msg ='ok reset complete')
+      resp_json =pyppa.json_ez.json.toJson(resp_dict)
+      resp =flask.make_response((resp_json,200,{'Content-Type':'text/plain'}))
+  except:
+    errmsg ='exception in rest_tile_tileid_patch'
+    logging.exception(errmsg)
+    resp_dict =dict( errmsg = errmsg)
+    resp_json =pyppa.json_ez.json.toJson(resp_dict)
+    resp =flask.make_response((resp_json, 200, {'Content-Type':'text/plain'}))
+    
+  return resp
       
