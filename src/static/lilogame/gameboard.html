@@ -58,7 +58,7 @@
         
         <li>Each tile lists several pieces of data:
           <ul>
-            <li>odds of winning (e.g. 1:2)</li>
+            <li>probability of winning (e.g. 1/2).  (Probability being distinctly different than odds.)</li>
             <li>payout awarded upon winning (e.g. $40)</li>
             <li>payout strategy - either shared or *each*  <br/>
               &quot;shared&quot; indicates that (upon winning) the payout splits between all players on the shared tile.<br/>
@@ -85,7 +85,7 @@
                v-on:click="choose_tile($event,tile)">
             <div>
                 <div>Payout: $&nbsp;{{tile.payout}} {{tile.id !== 1 ? 'shared' : '*each*'}}</div>
-                <div>Odds: {{tile.p_numerator}}:{{tile.p_denominator}}</div>
+                <div>p= {{tile.p_numerator}}/{{tile.p_denominator}}</div>
                 <div><img v-bind:src="tile.icon" height="100" width="100"/></div>
                 <div class="holder-star" v-if="player.tileid === tile.id">
                   <img src="../images/icon-star.svg" height="20" width="20" alt="*"/>
