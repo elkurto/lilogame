@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir /home/ubuntu/log/
 cd /home/ubuntu/lilogame/src
 export PYTHONPATH=.:/home/ubuntu/lilogame/src/site-packages
 LOGFILE=/home/ubuntu/log/`date +%Y%m%dT%H%M`.log
